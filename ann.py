@@ -8,16 +8,17 @@ class NeuralNet:
         self.numHiddenLayers = numHiddenLayers
         self.numNodesPerHiddenLayer = numNodesPerHiddenLayer
         self.numOutputNodes = numOutputNodes
-        
+        self.numNodes = numInputNodes + numHiddenLayers * numNodesPerHiddenLayer + numOutputNodes 
+        self.numLayers = numHiddenLayers + 2
     def createInputLayer(self):
         if self.numHiddenLayers == 0:
             fanIn = None
             fanOut = self.numOutputNodes
-            self.inputLayer = [NeuralNode('Input',idx,0,fanIn,fanOut) for idx in xrange(self.numInputNodes)]
+            self.inputLayer = [NeuralNode('Input',idx,0,fanIn,fanOut) for idx in range(self.numInputNodes)]
         else:
             fanIn = None
             fanOut = self.numNodesPerHiddenLayer
-            self.inputLayer = [NeuralNode('Input',idx,0,fanIn,fanOut) for idx in xrange(self.numInputNodes)]
+            self.inputLayer = [NeuralNode('Input',idx,0,fanIn,fanOut) for idx in range(self.numInputNodes)]
     
     def createHiddenLayers(self):
         if self.numHiddenLayers > 0:
@@ -28,23 +29,25 @@ class NeuralNet:
             # M outputs where M is the number of nodes in each hidden layer           
             fanIn = self.numInputNodes
             fanOut = self.numNodesPerHiddenLayer
-            layerID = 0 
-            firstHiddenLayer =  [NeuralNode('Hidden',nodeID,layerID,fanIn,fanOut) for nodeID in xrange(fanOut)]           
+            layerID = 1
+            firstHiddenLayer =  [NeuralNode('Hidden',nodeID,layerID,fanIn,fanOut) for nodeID in range(fanOut)]           
             self.hiddenlayers.append(firstHiddenLayer)
            
             #For hidden layers [1,N-1] we can go ahead and create them in a loop
             fanIn = self.numNodesPerHiddenLayer
             fanOut = fanIn
-            for layerID in xrange(1,self.numHiddenLayers-1):
-                self.hiddenlayers.append([NeuralNode('Hidden',nodeID,layerID,fanIn,fanOut) for nodeID in xrange(fanOut)])
+            for layerID in range(2,self.numHiddenLayers-1):
+                print(layerID)
+                self.hiddenlayers.append([NeuralNode('Hidden',nodeID,layerID,fanIn,fanOut) for nodeID in range(fanOut)])
         
             #For each node in the last  hidden layer , we have N inputs from the previous layer and 
             # M outputs where M is the number of nodes in the output layer           
-            fanIn = self.numNodesPerHiddenLayer
-            fanOut = self.numOutputNodes
-            layerID =  self.numHiddenLayers-1
-            lastHiddenLayer =  [NeuralNode('Hidden',nodeID,layerID,fanIn,fanOut) for nodeID in xrange(fanIn)]           
-            self.hiddenlayers.append(lastHiddenLayer)
+            if self.numHiddenLayers > 1:
+                fanIn = self.numNodesPerHiddenLayer
+                fanOut = self.numOutputNodes
+                layerID =  self.numHiddenLayers-1
+                lastHiddenLayer =  [NeuralNode('Hidden',nodeID,layerID,fanIn,fanOut) for nodeID in range(fanIn)]           
+                self.hiddenlayers.append(lastHiddenLayer)
         else:
             self.hiddenlayers = None
 
@@ -54,11 +57,11 @@ class NeuralNet:
         if self.numHiddenLayers == 0:
             fanIn = self.numInputNodes
             fanOut = 1
-            self.outputLayer = [NeuralNode('Output',idx,0,fanIn,fanOut) for idx in xrange(self.numOutputNodes)]
+            self.outputLayer = [NeuralNode('Output',idx,self.numLayers-1,fanIn,fanOut) for idx in range(self.numOutputNodes)]
         else:
             fanIn = self.numNodesPerHiddenLayer
             fanOut = 1
-            self.outputLayer = [NeuralNode('Output',idx,0,fanIn,fanOut) for idx in xrange(self.numOutputNodes)]
+            self.outputLayer = [NeuralNode('Output',idx,self.numLayers-1,fanIn,fanOut) for idx in range(self.numOutputNodes)]
     
     def printNet(self , outFileName):
         file = open(outFileName , "w")
@@ -76,7 +79,7 @@ class NeuralNet:
                 for eachHiddenNode in self.hiddenlayers[0]: 
                     inputlayerStrings.append("     " + eachNode.nodeType + "-L" + str(eachNode.layerID)+ "-N" +str(eachNode.nodeID) + " --> " + eachHiddenNode.nodeType + "-L" + str(eachHiddenNode.layerID)+ "-N" + str(eachHiddenNode.nodeID) + "\n" )
             
-            for idx in xrange(0,self.numHiddenLayers-1):
+            for idx in range(0,self.numHiddenLayers-1):
                 for eachNodeL in self.hiddenlayers[idx]:
                     for eachNodeR in self.hiddenlayers[idx+1]:
                         inputlayerStrings.append("     " + eachNodeL.nodeType + "-L" + str(eachNodeL.layerID)+ "-N" + str(eachNodeL.nodeID) + " --> " + eachNodeR.nodeType +  "-L" + str(eachNodeR.layerID)+"-N" +  str(eachNodeR.nodeID) + "\n" )
@@ -122,18 +125,18 @@ class NeuralNode:
         
 
 
-numInputNodes = 784
-numHiddenLayers = 2
-numNodesPerHiddenLayer = 512
-numOutputNodes = 10       
+# numInputNodes = 784
+# numHiddenLayers = 2
+# numNodesPerHiddenLayer = 512
+# numOutputNodes = 10       
     
     
-ANN = NeuralNet(numInputNodes,numHiddenLayers,numNodesPerHiddenLayer,numOutputNodes)
+# ANN = NeuralNet(numInputNodes,numHiddenLayers,numNodesPerHiddenLayer,numOutputNodes)
 
-ANN.createInputLayer()
-ANN.createOutputLayer()
-ANN.createHiddenLayers()
-ANN.printNet("ANN.mmd")
+# ANN.createInputLayer()
+# ANN.createOutputLayer()
+# ANN.createHiddenLayers()
+# ANN.printNet("ANN.mmd")
 # print("Input Layer \n")
 # for node in ANN.inputLayer:
 #     node.printNode()

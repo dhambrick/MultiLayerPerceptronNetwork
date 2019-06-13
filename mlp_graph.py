@@ -100,7 +100,12 @@ class NeuralNetGraph:
                 for idx,neigh_node in enumerate(neighbors):
                     neigh_tag = neigh_node[0]
                     self.neural_net_graph.add_edge(node_tag,neigh_tag,weight=weights[idx])
-   
+    
+    def CreateANNGraph(self):
+        self.CreateGraphNodes()
+        self.CreateGraphEdges()
+
+
     def ComputeLayerResponse(self,weights,inputs,activation_functions,calc_deriv=False):
         n_weights_ = len(weights)
         weights = weights

@@ -4,6 +4,8 @@ import numpy as np
 import yaml
 import ann_special_funcs as spc_fc
 import scipy.linalg as sp_lin
+import copy
+
 
 @dataclass
 class NeuralNode:
@@ -25,6 +27,7 @@ class NeuralNet:
         self.numHiddenLayers = self.config["Layers"]["Hidden"]["NumHiddenLayers"]
         self.numNodesPerHiddenLayer = self.config["Layers"]["Hidden"]["NumNodesPerHiddenLayer"]
         self.numOutputNodes = self.config["Layers"]["Output"]["NumOutputNodes"]
+        self.training_cost = self.config["Training_Cost"]
         self.numNodes = self.numInputNodes + self.numHiddenLayers * self.numNodesPerHiddenLayer + self.numOutputNodes 
         self.numLayers = self.numHiddenLayers + 2
         self.inputLayer = []
@@ -60,6 +63,7 @@ class NeuralNetGraph:
         self.neural_net_graph = None
         self.weights = None
         self.numLayers = self.neural_net.numLayers
+        self.training_cost = self.neural_net.training_cost
     def CreateGraphNodes(self):
         self.neural_net_graph = nx.DiGraph()
         #Create the input layer nodes
@@ -120,14 +124,19 @@ class NeuralNetGraph:
         else :
             return {'f_x':func_responses,'Df_Dx':None}
 
-    def ComputeForwardPass(self,input_):
+    def ComputeForwardPass(self,graph,input_,calc_deriv=False):
+        if graph is None:
+            neural_net_graph = self.neural_net_graph
+        else:
+            neural_net_graph = graph
+       
         for layer_idx in range(self.numLayers):
             if layer_idx == 0:
                 input_nodes = list(filter (lambda node : node[1]['layer_id'] == layer_idx , self.neural_net_graph.nodes(data=True)))
                 for ndx,node in enumerate(input_nodes):
                     node_tag = node[0]
-                    self.neural_net_graph.node[node_tag]["input"] = input_[ndx]
-                    self.neural_net_graph.node[node_tag]["output"] = input_[ndx]
+                    neural_net_graph.node[node_tag]["input"] = input_[ndx]
+                    neural_net_graph.node[node_tag]["output"] = [input_[ndx]]
             else:
                 layer_nodes = list(filter (lambda node : node[1]['layer_id'] == layer_idx , self.neural_net_graph.nodes(data=True)))
                 layer_inputs = []
@@ -138,25 +147,47 @@ class NeuralNetGraph:
                     node_inputs = []
                     weights = []
                     node_tag = node[0]
-                    incoming_edges = self.neural_net_graph.in_edges(node_tag,data=True)
+                    incoming_edges = neural_net_graph.in_edges(node_tag,data=True)
                     layer_activations.append(node[1]['activation_function'])
                     
                     for edge in incoming_edges:
                         edge_weight = edge[2]["weight"]
-                        node_input = self.neural_net_graph.node[edge[0]]["output"]
+                        node_input = neural_net_graph.node[edge[0]]["output"][0]
+                        print(node_input)
                         weights.append(edge_weight)
                         node_inputs.append(node_input)
                     
                     layer_inputs.append(node_inputs)
-                    self.neural_net_graph.node[node_tag]["input"] = node_inputs             
+                    neural_net_graph.node[node_tag]["input"] = [node_inputs]             
                     layer_weights.append(weights)
                
-                layer_response = self.ComputeLayerResponse(layer_weights,layer_inputs,layer_activations)
+                layer_response = self.ComputeLayerResponse(layer_weights,layer_inputs,layer_activations,calc_deriv)
                 for ndx,node in enumerate(layer_nodes):
                     node_tag = node[0]
-                    self.neural_net_graph.node[node_tag]["output"] = layer_response['f_x'][ndx]
-                    
+                    neural_net_graph.node[node_tag]["output"] = [layer_response['f_x'][ndx],layer_response['Df_Dx'][ndx]]
 
+    def Train(self,input_,truth):
+        self.extended_graph = copy.deepcopy(self.neural_net_graph)
+        self.ComputeForwardPass(self.extended_graph,input_,calc_deriv=True)
+        output_nodes = list(filter(lambda node : node[1]['nodeType'] == 'Output' , self.extended_graph.nodes(data=True)))
+        for each_node in output_nodes:
+            node_tag = 'L' + str(each_node[1]['layer_id']+1) + ' ' + str(each_node[1]['nodeID'])
+            net_output = each_node[1]['output'][0]
+            error_f = spc_fc.activations[self.training_cost]['f'](net_output,truth)
+            error_d = spc_fc.activations[self.training_cost]['DfDx'](net_output,truth) 
 
-    def ExportGraphAsDot(self, out_path):
-        nx.nx_agraph.write_dot(self.neural_net_graph,out_path)
+            self.extended_graph.add_node(
+                    node_tag,
+                    nodeType = "Error",
+                    nodeID = each_node[1]['nodeID'],
+                    layer_id = each_node[1]['layer_id']+1,
+                    activation_function=self.training_cost,
+                    input = net_output,
+                    output = [error_f,error_d])
+            self.extended_graph.add_edge(each_node[0],node_tag,weight=1)
+
+    def ExportGraphAsDot(self, out_path, graph=None):
+        if graph is None:
+            nx.nx_agraph.write_dot(self.neural_net_graph,out_path)
+        else :
+            nx.nx_agraph.write_dot(graph,out_path)

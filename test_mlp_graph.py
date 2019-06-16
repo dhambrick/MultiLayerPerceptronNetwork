@@ -7,5 +7,6 @@ graph_out_path = 'xor_ann.dot'
 
 xor_mlp = mlp.NeuralNetGraph(ann_config_path)
 xor_mlp.CreateANNGraph()
-xor_mlp.ComputeForwardPass(np.random.randn(20))
-xor_mlp.ExportGraphAsDot(graph_out_path)
+#xor_mlp.ComputeForwardPass(np.random.randn(20))
+xor_mlp.Train(np.random.randn(2),23)
+#xor_mlp.ExportGraphAsDot(graph_out_path)

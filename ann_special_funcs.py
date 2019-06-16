@@ -25,14 +25,21 @@ def DSigmoidDx(x):
     return Sigmoid(x)*(1-Sigmoid(x))
 
 def ErrorSquared(pred_x,true_x):
-    return np.sum((pred_x-true_x)**2)
+    return .5*(pred_x-true_x)**2
+
+def DErrorSquared(pred_x,true_x):
+    return (pred_x - true_x)
 
 activations =  {"ReLU" :{
                     "f":ReLU,
                     "DfDx":dReLUdx},
                 "Sigmoid" :{
                     "f":Sigmoid,
-                    "DfDx":Sigmoid}}
+                    "DfDx":Sigmoid},
+                "Error_Squared" :{
+                    "f":ErrorSquared,
+                    "DfDx":DErrorSquared}}
+
 training_costs = {"Error_Squared":ErrorSquared}
 
 

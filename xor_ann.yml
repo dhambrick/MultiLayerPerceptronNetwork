@@ -1,13 +1,13 @@
 Network_Name: XOR 
 Layers:
       Input:
-           NumInputNodes: 2   
+           NumInputNodes: 5  
       Hidden:
-            NumHiddenLayers: 1
+            NumHiddenLayers: 3
             NumNodesPerHiddenLayer: 3
             ActivationFunction: Sigmoid
       Output:
-            NumOutputNodes: 1
+            NumOutputNodes: 4
             ActivationFunction: Sigmoid
 Training_Method: Back_Prop
 Training_Cost: Error_Squared
